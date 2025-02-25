@@ -3,29 +3,36 @@ import random
 import pygame
 
 
-# Q学习部分
 class TicTacToe:
     def __init__(self):
         self.state_space = self.create_state_space()
-        self.q_table = np.zeros((len(self.state_space), 9))  # 9 possible actions
-        self.learning_rate = 0.1
-        self.discount_factor = 0.9
-        self.epsilon = 0.1  # Exploration rate
+        self.q_table = np.zeros((len(self.state_space), 9))
+        self.learning_rate = 0.5 # 学习率
+        self.discount_factor = 0.5 # 折扣因子
+        self.epsilon = 0.1  # 探索因子
 
     def create_state_space(self):
-        return ["".join([" "] * 9)]  # 初始状态为空棋盘
+        return ["".join([" "] * 9)]
 
     def get_available_actions(self, state):
         return [i for i in range(9) if state[i] == " "]
 
     def choose_action(self, state):
+        if state not in self.state_space:
+            self.state_space.append(state)
+            self.q_table = np.vstack((self.q_table, np.zeros(9)))
+
         if random.uniform(0, 1) < self.epsilon:
-            return random.choice(self.get_available_actions(state))  # 随机选择动作
+            return random.choice(self.get_available_actions(state))
         else:
             state_index = self.state_space.index(state)
-            return np.argmax(self.q_table[state_index])  # 选择最大Q值的动作
+            return np.argmax(self.q_table[state_index])
 
     def update_q_value(self, state, action, reward, next_state):
+        if next_state not in self.state_space:
+            self.state_space.append(next_state)
+            self.q_table = np.vstack((self.q_table, np.zeros(9)))
+
         state_index = self.state_space.index(state)
         next_state_index = self.state_space.index(next_state)
         best_next_action = np.argmax(self.q_table[next_state_index])
@@ -33,12 +40,11 @@ class TicTacToe:
         self.q_table[state_index][action] += self.learning_rate * (td_target - self.q_table[state_index][action])
 
 
-# 游戏状态管理
 class Game:
     def __init__(self):
-        self.board = [" "] * 9  # 初始化棋盘
-        self.current_player = "X"  # "X"先手
-        self.winner = None  # 跟踪赢家
+        self.board = [" "] * 9
+        self.current_player = "X"
+        self.winner = None
 
     def reset(self):
         self.board = [" "] * 9
@@ -50,17 +56,17 @@ class Game:
             self.board[position] = self.current_player
             if self.check_winner():
                 self.winner = self.current_player
-                return 1  # 赢
+                return 1
             elif " " not in self.board:
-                return 0  # 平局
+                return 0
             self.current_player = "O" if self.current_player == "X" else "X"
-        return None  # 继续游戏
+        return None
 
     def check_winner(self):
         winning_combinations = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8],  # 行
-            [0, 3, 6], [1, 4, 7], [2, 5, 8],  # 列
-            [0, 4, 8], [2, 4, 6]  # 对角线
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
         ]
         for combo in winning_combinations:
             if self.board[combo[0]] == self.board[combo[1]] == self.board[combo[2]] != " ":
@@ -68,7 +74,6 @@ class Game:
         return False
 
 
-# Pygame部分
 def draw_board(board):
     for i in range(3):
         for j in range(3):
@@ -80,18 +85,18 @@ def draw_board(board):
                 pygame.draw.circle(screen, (0, 0, 255), (j * 100 + 50, i * 100 + 50), 45, 5)
 
 
-# 初始化Pygame
 pygame.init()
 screen = pygame.display.set_mode((300, 300))
-game = Game()
 
-# 运行游戏
+game = Game()
+q_learning = TicTacToe()
+
 running = True
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN and game.winner is None:
+        elif event.type == pygame.MOUSEBUTTONDOWN and game.winner is None and game.current_player == "X":
             x, y = event.pos
             row = y // 100
             col = x // 100
@@ -102,10 +107,26 @@ while running:
                     print(f"{game.winner} 获胜！")
                 else:
                     print("平局！")
-                game.reset()  # 重置游戏
+                game.reset()
+
+    if game.current_player == "O":
+        state = "".join(game.board)
+        action = q_learning.choose_action(state)
+        game.make_move(action)
+
+        reward = 1 if game.winner == "O" else -1 if game.winner == "X" else 0
+        next_state = "".join(game.board)
+        q_learning.update_q_value(state, action, reward, next_state)
+
+        if game.winner:
+            print(f"{game.winner} 获胜！")
+            game.reset()
+        elif " " not in game.board:
+            print("平局！")
+            game.reset()
 
     screen.fill((0, 0, 0))
-    draw_board(game.board)  # 更新棋盘状态
+    draw_board(game.board)
     pygame.display.flip()
 
 pygame.quit()
