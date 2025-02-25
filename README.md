@@ -7,7 +7,7 @@ The nature of greedy selection means that when faced with a problem and needs to
 This project is divided into the following modules:Q Learning module: a reinforcement learning algorithm for training AI.Game state management module: to realize the rules and logic of the game.Pygame Visualization module: Provide the game's graphical interface and user interaction.Each module plays a different role in the project, and its function and implementation are described in detail below.
 3.Q-learning
 The Q learning module is implemented by class TicTacToe. Its main functions include: initializing the state space and the Q table;Action selection based on the greedy policy; the Q-value update.
-3.1状态空间的表示
+3.1Representation of state space
 The state space represents all possible board states of the board. Each state is represented by a string of length 9:" "Empty position; "X" is a piece of player X; and "O" is a piece of player O.
 The initial state is an fully empty board:
 self.state_space = ["".join([" "] * 9)]  
@@ -25,7 +25,13 @@ def update_q_value(self, state, action, reward, next_state):
     next_state_index = self.state_space.index(next_state)
     best_next_action = np.argmax(self.q_table[next_state_index])
     td_target = reward + self.discount_factor * self.q_table[next_state_index][best_next_action]
-    self.q_table[state_index][action] += self.learning_rate * (td_target - self.q_table[state_index][action])
+self.q_table[state_index][action] += self.learning_rate * (td_target - self.q_table[state_index][action])
+    self.learning_rate = 0.9
+self.discount_factor = 0.1
+self.epsilon = 0.9
+self.learning_rate = 0.9：Set the learning rate of 0.9 and control the magnitude of Q value update.
+self.discount_factor = 0.1, setting the discount factor to 0.1, affecting the weight of future rewards.
+self.epsilon = 0.9, for random selection in the greedy strategy.
 4.Game status management
 Game status management is implemented by the Game class, and its main functions include:Board initialization;Action execution;Check that the game is over.
 4.1 Board initialization
@@ -94,7 +100,7 @@ Game logic and Visualization: The Pygame provides an intuitive, user-friendly in
 Modular design: separate Q learning, game logic and visualization, make the code clear and easy to read, easy to expand and maintain
 6.2 shortcoming
 In the early stage of learning, because the state space has not been fully explored, its strategies are relatively random and easy to make mistakes.
-With the progress of learning, gradually mastered the basic rules of well word chess, and learned the defense and offensive strategy. After enough training, you can achieve a near-optimal strategy, and most probably avoid losing to the player.Users can play the real-time battle through the Pygame interface,
+With the progress of learning, gradually mastered the basic rules of well word chess, and learned the defense and offensive strategy. After enough training, you can achieve a near-optimal strategy, and most probably avoid losing to the player.
 7.reference
 [1]Watkins, Christopher JCH, and Peter Dayan. "Q-learning." Machine learning 8 (1992): 279-292.
 [2]Wang,Y. (2023).Review on greedy algorithm.Theoretical and Natural Science,14,233-239.
